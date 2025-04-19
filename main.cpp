@@ -233,6 +233,5 @@ int main(int argc, char* argv[]) {
         auto desifrirano = desifrirajPare(pari, M);
         izpisiDesifrirano(desifrirano);
     }
-
     return 0;
 }

@@ -23,7 +23,21 @@ std::vector<unsigned char> preberiVhodnoDatoteko(const std::string& pot) {
         podatki.push_back(znak);
     }
 
-    return podatki;
+    // Odstrani UTF-8 BOM, če obstaja
+    if (podatki.size() >= 3 && podatki[0] == 0xEF && podatki[1] == 0xBB && podatki[2] == 0xBF) {
+        podatki.erase(podatki.begin(), podatki.begin() + 3);
+    }
+
+    // Ročno odstrani presledke in bele znake
+    std::vector<unsigned char> brezPresledkov;
+    for (size_t i = 0; i < podatki.size(); ++i) {
+        unsigned char c = podatki[i];
+        if (c != ' ' && c != '\n' && c != '\r' && c != '\t') {
+            brezPresledkov.push_back(c);
+        }
+    }
+
+    return brezPresledkov;
 }
 
 // ============================
@@ -74,7 +88,7 @@ void izpisiPare(const std::vector<ParZnakov>& pari) {
 }
 
 // ============================
-// Generiranje 16x16 matrike ključa
+// Generiranje 16x16 matrike kljuca
 // ============================
 void generirajMatriko(const std::string& kljuc, unsigned char M[16][16]) {
     std::unordered_set<unsigned char> videno;
@@ -99,10 +113,16 @@ void generirajMatriko(const std::string& kljuc, unsigned char M[16][16]) {
 }
 
 void izpisiMatriko(unsigned char M[16][16]) {
-    std::cout << "Matrika ključa (16x16):\n";
+    std::cout << "Matrika kljuca (16x16):\n";
     for (int i = 0; i < 16; ++i) {
         for (int j = 0; j < 16; ++j) {
-            std::cout << std::hex << (int)M[i][j] << " ";
+            unsigned char znak = M[i][j];
+
+            // Če je natisljiv ASCII znak (32 do 126), ga izpišemo kot znak
+            if (znak >= 32 && znak <= 126)
+                std::cout << " " << znak << " ";
+            else
+                std::cout << " . ";  // nadomestek za nenatisljive znake
         }
         std::cout << "\n";
     }
@@ -110,7 +130,7 @@ void izpisiMatriko(unsigned char M[16][16]) {
 }
 
 // ============================
-// Šifriranje
+// sifriranje
 // ============================
 std::pair<int, int> poisciPozicijo(unsigned char znak, unsigned char M[16][16]) {
     for (int i = 0; i < 16; ++i)
@@ -186,7 +206,7 @@ std::vector<ParZnakov> desifrirajPare(const std::vector<ParZnakov>& pari, unsign
 }
 
 void izpisiDesifrirano(const std::vector<ParZnakov>& pari) {
-    std::cout << "Dešifrirani pari:\n";
+    std::cout << "Desifrirani pari:\n";
     for (const auto& par : pari) {
         std::cout << par << " ";
     }
@@ -195,7 +215,7 @@ void izpisiDesifrirano(const std::vector<ParZnakov>& pari) {
 
 
 void izpisiSifrirano(const std::vector<ParZnakov>& sifrirano) {
-    std::cout << "Šifrirani pari:\n";
+    std::cout << "sifrirani pari:\n";
     for (const auto& par : sifrirano) {
         std::cout << par << " ";
     }
@@ -223,7 +243,7 @@ void zapisiVDatoteko(const std::string& imeDatoteke, const std::vector<ParZnakov
 // ============================
 int main(int argc, char* argv[]) {
     if (argc != 4) {
-        std::cerr << "Uporaba: " << argv[0] << " <e ali d> <ključ> <datoteka>\n";
+        std::cerr << "Uporaba: " << argv[0] << " <e ali d> <kljuc> <datoteka>\n";
         return 1;
     }
 

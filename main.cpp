@@ -4,106 +4,159 @@
 #include <unordered_set>
 #include <string>
 
-using CharPair = std::pair<unsigned char, unsigned char>;
+using ParZnakov = std::string;
 
 // ============================
 // Branje datoteke
 // ============================
-std::vector<unsigned char> readInputFile(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    std::vector<unsigned char> data;
+std::vector<unsigned char> preberiVhodnoDatoteko(const std::string& pot) {
+    std::ifstream vhod(pot, std::ios::binary);
+    std::vector<unsigned char> podatki;
 
-    if (!in) {
-        std::cerr << "Napaka pri odpiranju datoteke: " << path << "\n";
-        return data;
+    if (!vhod) {
+        std::cerr << "Napaka pri odpiranju datoteke: " << pot << "\n";
+        return podatki;
     }
 
-    unsigned char ch;
-    while (in.read(reinterpret_cast<char*>(&ch), 1)) {
-        data.push_back(ch);
+    unsigned char znak;
+    while (vhod.read(reinterpret_cast<char*>(&znak), 1)) {
+        podatki.push_back(znak);
     }
 
-    return data;
+    return podatki;
 }
 
 // ============================
-// Izpis surovega vhodnega besedila
+// Izpis surovega besedila
 // ============================
-void printRawInput(const std::vector<unsigned char>& input) {
-    std::cout << "Surov vhodni niz (" << input.size() << " znakov):\n";
-    for (unsigned char ch : input) {
-        std::cout << std::hex << (int)ch << " ";
+void izpisiSuroviVhod(const std::vector<unsigned char>& vhod) {
+    std::cout << "Surov vhod (" << vhod.size() << " znakov):\n";
+    for (unsigned char znak : vhod) {
+        std::cout << std::hex << (int)znak << " ";
     }
     std::cout << "\n\n";
 }
 
 // ============================
-// Predobdelava – razbijanje na pare
+// Predobdelava – pari znakov
 // ============================
-std::vector<CharPair> preprocessInput(const std::vector<unsigned char>& input) {
-    std::vector<CharPair> pairs;
+std::vector<ParZnakov> predobdelajVhod(const std::vector<unsigned char>& vhod) {
+    std::vector<ParZnakov> pari;
     size_t i = 0;
 
-    while (i < input.size()) {
-        unsigned char first = input[i];
-        unsigned char second;
+    while (i < vhod.size()) {
+        char prvi = vhod[i];
+        char drugi;
 
-        if (i + 1 >= input.size()) {
-            second = 3; // ASCII EOF
+        if (i + 1 >= vhod.size()) {
+            drugi = 3; // ASCII EOF
             i++;
-        } else if (input[i] == input[i + 1]) {
-            second = '\0'; // NULL
-            i += 1;
+        } else if (vhod[i] == vhod[i + 1]) {
+            drugi = '\0'; // ASCII NULL
+            i++;
         } else {
-            second = input[i + 1];
+            drugi = vhod[i + 1];
             i += 2;
         }
 
-        pairs.emplace_back(first, second);
+        pari.push_back(std::string{ prvi, drugi });
     }
 
-    return pairs;
+    return pari;
 }
 
-void printPairs(const std::vector<CharPair>& pairs) {
-    std::cout << "Predobdelani pari znakov:\n";
-    for (const auto& [a, b] : pairs) {
-        std::cout << "(" << std::hex << (int)a << "," << (int)b << ") ";
+void izpisiPare(const std::vector<ParZnakov>& pari) {
+    std::cout << "Predobdelani pari:\n";
+    for (const auto& par : pari) {
+        std::cout << par << " ";
     }
     std::cout << "\n\n";
 }
 
 // ============================
-// Generiranje 16x16 matrike
+// Generiranje 16x16 matrike ključa
 // ============================
-std::vector<unsigned char> generateMatrix(const std::string& key) {
-    std::unordered_set<unsigned char> seen;
-    std::vector<unsigned char> matrix;
+void generirajMatriko(const std::string& kljuc, unsigned char M[16][16]) {
+    std::unordered_set<unsigned char> videno;
+    std::vector<unsigned char> linearno;
 
-    for (unsigned char ch : key) {
-        if (seen.find(ch) == seen.end()) {
-            matrix.push_back(ch);
-            seen.insert(ch);
+    for (unsigned char znak : kljuc) {
+        if (videno.insert(znak).second) {
+            linearno.push_back(znak);
         }
     }
 
     for (int i = 0; i < 256; ++i) {
-        unsigned char ch = static_cast<unsigned char>(i);
-        if (seen.find(ch) == seen.end()) {
-            matrix.push_back(ch);
-            seen.insert(ch);
+        unsigned char znak = static_cast<unsigned char>(i);
+        if (videno.insert(znak).second) {
+            linearno.push_back(znak);
         }
     }
 
-    return matrix;
+    for (int i = 0; i < 256; ++i) {
+        M[i / 16][i % 16] = linearno[i];
+    }
 }
 
-void printMatrix(const std::vector<unsigned char>& matrix) {
+void izpisiMatriko(unsigned char M[16][16]) {
     std::cout << "Matrika ključa (16x16):\n";
-    for (int i = 0; i < 256; ++i) {
-        if (i % 16 == 0 && i != 0)
-            std::cout << "\n";
-        std::cout << std::hex << (int)matrix[i] << " ";
+    for (int i = 0; i < 16; ++i) {
+        for (int j = 0; j < 16; ++j) {
+            std::cout << std::hex << (int)M[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}
+
+// ============================
+// Šifriranje
+// ============================
+std::pair<int, int> poisciPozicijo(unsigned char znak, unsigned char M[16][16]) {
+    for (int i = 0; i < 16; ++i)
+        for (int j = 0; j < 16; ++j)
+            if (M[i][j] == znak)
+                return { i, j };
+
+    return { -1, -1 }; // ne bi smelo nastati
+}
+
+std::vector<ParZnakov> sifrirajPare(const std::vector<ParZnakov>& pari, unsigned char M[16][16]) {
+    std::vector<ParZnakov> sifrirano;
+
+    for (const auto& par : pari) {
+        unsigned char a = par[0];
+        unsigned char b = par[1];
+
+        auto [i, j] = poisciPozicijo(a, M);
+        auto [k, f] = poisciPozicijo(b, M);
+
+        char novoA, novoB;
+
+        if (i != k && j != f) {
+            novoA = M[i][f];
+            novoB = M[k][j];
+        } else if (i == k) {
+            novoA = M[i][(j + 1) % 16];
+            novoB = M[k][(f + 1) % 16];
+        } else if (j == f) {
+            novoA = M[(i + 1) % 16][j];
+            novoB = M[(k + 1) % 16][f];
+        } else {
+            novoA = a;
+            novoB = b;
+        }
+
+        sifrirano.push_back(std::string{ novoA, novoB });
+    }
+
+    return sifrirano;
+}
+
+void izpisiSifrirano(const std::vector<ParZnakov>& sifrirano) {
+    std::cout << "Šifrirani pari:\n";
+    for (const auto& par : sifrirano) {
+        std::cout << par << " ";
     }
     std::cout << "\n\n";
 }
@@ -117,20 +170,24 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string mode = argv[1];     // "e" ali "d"
-    std::string key = argv[2];
-    std::string filepath = argv[3];
+    std::string nacin = argv[1];     // "e" ali "d"
+    std::string kljuc = argv[2];
+    std::string potDoDatoteke = argv[3];
 
-    auto rawInput = readInputFile(filepath);
-    printRawInput(rawInput);
+    auto suroviVhod = preberiVhodnoDatoteko(potDoDatoteke);
+    izpisiSuroviVhod(suroviVhod);
 
-    auto pairs = preprocessInput(rawInput);
-    printPairs(pairs);
+    auto pari = predobdelajVhod(suroviVhod);
+    izpisiPare(pari);
 
-    auto matrix = generateMatrix(key);
-    printMatrix(matrix);
+    unsigned char M[16][16];
+    generirajMatriko(kljuc, M);
+    izpisiMatriko(M);
 
-    // TODO: Tukaj bo kasneje dodan algoritem za šifriranje/dešifriranje
+    if (nacin == "e") {
+        auto sifrirano = sifrirajPare(pari, M);
+        izpisiSifrirano(sifrirano);
+    }
 
     return 0;
 }

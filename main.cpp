@@ -153,6 +153,47 @@ std::vector<ParZnakov> sifrirajPare(const std::vector<ParZnakov>& pari, unsigned
     return sifrirano;
 }
 
+std::vector<ParZnakov> desifrirajPare(const std::vector<ParZnakov>& pari, unsigned char M[16][16]) {
+    std::vector<ParZnakov> desifrirano;
+
+    for (const auto& par : pari) {
+        char a = par[0];
+        char b = par[1];
+
+        auto [i, j] = poisciPozicijo(a, M);
+        auto [k, f] = poisciPozicijo(b, M);
+
+        char novoA, novoB;
+
+        if (i != k && j != f) {
+            novoA = M[i][f];
+            novoB = M[k][j];
+        } else if (i == k) {
+            novoA = M[i][(j + 15) % 16];  // -1 mod 16
+            novoB = M[k][(f + 15) % 16];
+        } else if (j == f) {
+            novoA = M[(i + 15) % 16][j];  // -1 mod 16
+            novoB = M[(k + 15) % 16][f];
+        } else {
+            novoA = a;
+            novoB = b;
+        }
+
+        desifrirano.push_back(std::string{ novoA, novoB });
+    }
+
+    return desifrirano;
+}
+
+void izpisiDesifrirano(const std::vector<ParZnakov>& pari) {
+    std::cout << "Dešifrirani pari:\n";
+    for (const auto& par : pari) {
+        std::cout << par << " ";
+    }
+    std::cout << "\n\n";
+}
+
+
 void izpisiSifrirano(const std::vector<ParZnakov>& sifrirano) {
     std::cout << "Šifrirani pari:\n";
     for (const auto& par : sifrirano) {
@@ -187,6 +228,10 @@ int main(int argc, char* argv[]) {
     if (nacin == "e") {
         auto sifrirano = sifrirajPare(pari, M);
         izpisiSifrirano(sifrirano);
+    }
+    else if (nacin == "d") {
+        auto desifrirano = desifrirajPare(pari, M);
+        izpisiDesifrirano(desifrirano);
     }
 
     return 0;

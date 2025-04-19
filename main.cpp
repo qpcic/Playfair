@@ -202,6 +202,22 @@ void izpisiSifrirano(const std::vector<ParZnakov>& sifrirano) {
     std::cout << "\n\n";
 }
 
+void zapisiVDatoteko(const std::string& imeDatoteke, const std::vector<ParZnakov>& podatki) {
+    std::ofstream izhod(imeDatoteke, std::ios::binary);
+
+    if (!izhod) {
+        std::cerr << "Napaka pri odpiranju za pisanje: " << imeDatoteke << "\n";
+        return;
+    }
+
+    for (const auto& par : podatki) {
+        izhod.write(par.c_str(), par.size()); // par.size() bo 2
+    }
+
+    std::cout << "Zapisano v datoteko: " << imeDatoteke << "\n";
+}
+
+
 // ============================
 // MAIN
 // ============================
@@ -228,10 +244,13 @@ int main(int argc, char* argv[]) {
     if (nacin == "e") {
         auto sifrirano = sifrirajPare(pari, M);
         izpisiSifrirano(sifrirano);
+        zapisiVDatoteko("out_e.txt", sifrirano);
     }
     else if (nacin == "d") {
         auto desifrirano = desifrirajPare(pari, M);
         izpisiDesifrirano(desifrirano);
+        zapisiVDatoteko("out_d.txt", desifrirano);
     }
+
     return 0;
 }
